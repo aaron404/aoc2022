@@ -1,5 +1,7 @@
 #![feature(iter_array_chunks)]
 
+use std::io::ErrorKind;
+
 fn day_1() {
     let input = include_str!("1.txt");
 
@@ -144,7 +146,6 @@ fn day_4() {
         let b = assignments[1].split("-").map(|c| c.parse::<i32>().unwrap()).collect::<Vec<i32>>();
         let r1 = IntRange {min: a[0], max: a[1]};
         let r2 = IntRange {min: b[0], max: b[1]};
-        println!("ranges: {} {} {} {} ", a[0], a[1], b[0], b[1]);
         range_overlaps(&r1, &r2) || range_overlaps(&r2, &r1)
     })
     .count();
@@ -165,13 +166,12 @@ fn day_5() {
         .split_ascii_whitespace().count();
 
     let mut stacks: Vec<Vec<char>> = Vec::new();
-    for i in 0..num_stacks {
+    for _ in 0..num_stacks {
         stacks.push(Vec::new());
     }
 
     for i in (0..max_height-1).rev() {
         let line = crates[i];
-        println!("line {}: {}", i, line);
         line.chars().collect::<Vec<char>>().chunks(4)
             .map(|c| c[1])
             .enumerate()
@@ -180,10 +180,6 @@ fn day_5() {
                     stacks[f.0].push(f.1);
                 }
             });
-    }
-
-    for stack in stacks.iter() {
-        println!("{:?}", stack);
     }
 
     let m: Vec<Vec<usize>> = moves
@@ -211,7 +207,6 @@ fn day_5() {
             let count = m[0];
             let from  = m[1] - 1;
             let to    = m[2] - 1;
-            println!("{count}, {from}, {to}");
             let mut tmp: Vec<char> = Vec::new();
             for i in 0..count {
                 let c = stacks[from].pop().unwrap();
@@ -233,10 +228,39 @@ fn day_5() {
     println!("num &mut : {num_stacks}")
 }
 
+// create a bitmask of ascii codes, then count the ones
+fn msg_is_unique(msg: &[u8]) -> bool {
+    let mask = msg.iter().fold(0u128, |acc, &x| acc | (1 << x));
+    mask.count_ones() as usize == msg.len()
+}
+
+fn get_first_unique_n(data: &[u8], n: usize) -> usize {
+    data.windows(n)
+        .enumerate()
+        .filter(|window| msg_is_unique(window.1))
+        .nth(0)
+        .expect("Error parsing input").0 + n
+}
+
+fn day_6() {
+    const START_OF_PACKET_SIZE: usize = 4;
+    const START_OF_MSG_SIZE: usize = 14;
+
+    let input = include_str!("6.txt");
+
+    let data = input.as_bytes();
+
+    let first_packet_offset = get_first_unique_n(data, START_OF_PACKET_SIZE);
+    let first_msg_offset = get_first_unique_n(data, START_OF_MSG_SIZE);
+
+    println!("first packet detected at char {first_packet_offset}, first message at char {first_msg_offset}");
+}
+
 fn main() {
     day_1();
     day_2();
     day_3();
     day_4();
     day_5();
+    day_6();
 }
