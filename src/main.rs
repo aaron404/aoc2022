@@ -1,33 +1,26 @@
 #![feature(iter_array_chunks)]
 
-use std::io::ErrorKind;
+use std::collections::{HashMap, HashSet};
 
 fn day_1() {
-    let input = include_str!("1.txt");
+    // split input at empty lines
+    let input = include_str!("1.txt").split("\r\n\r\n");
 
-    let mut highest_vals = [0, 0, 0];
-    let mut current_total = 0;
-    input.lines().for_each(|line| {
-        match line {
-            "" => {
-                if current_total > highest_vals[0] {
-                    highest_vals[0] = current_total;
-                    highest_vals.sort();
-                };
-                current_total = 0;
-            },
-            _ => {
-                let current_val = line.parse::<u32>().unwrap();
-                current_total += current_val;
-            }
-        }
-    });
-    if current_total > highest_vals[0] {
-        highest_vals[0] = current_total;
-        highest_vals.sort();
-    };
+    // split list of calories into lines, map strings to integers, sum each list, and collect into a vector
+    let mut sums = input.map(|cal_list| 
+        cal_list.lines()
+            .map(|cal_count| cal_count.parse::<u32>().expect("invalid input"))
+            .sum::<u32>()
+        ).collect::<Vec<u32>>();
 
-    println!("highest: {}, sum of top 3: {}", highest_vals[2], highest_vals.iter().sum::<u32>());
+    // reverse sort the vector (highest first)
+    sums.sort_unstable_by(|a, b| b.cmp(a));
+
+    // extract highest and sum of top 3
+    let highest = sums.first().expect("invalid input");
+    let sum_of_top3 = sums.iter().take(3).sum::<u32>();
+
+    println!("Day  1: {: >8} {: >8}", highest, sum_of_top3);
 }
 
 fn day_2() {
@@ -256,6 +249,324 @@ fn day_6() {
     println!("first packet detected at char {first_packet_offset}, first message at char {first_msg_offset}");
 }
 
+struct Dir {
+    dirs: HashMap<String, Dir>,
+    files: HashMap<String, usize>,
+}
+
+impl Dir {
+    fn new() -> Self {
+        Dir {
+            dirs: HashMap::new(),
+            files: HashMap::new(),
+        }
+    }
+
+    fn add_file(&mut self, path: &Vec<&str>, name: String, size: usize) {
+        self.get_dir(path).files.insert(name, size);
+    }
+
+    fn get_dir(&mut self, path: &Vec<&str>) -> &mut Dir {
+        let cwd = self;
+        path.iter()
+            .map(|name| name.to_string())
+            .fold(cwd, |acc, f| {
+                if !acc.dirs.contains_key(&f) {
+                    acc.dirs.insert(f.clone(), Dir::new());
+                }
+                acc.dirs.get_mut(&f).unwrap()
+            })
+    }
+
+    fn get_size(&self) -> usize {
+        let mut sum: usize = 0;
+        for file in self.files.iter() {
+            sum += file.1;
+        }
+        for dir in self.dirs.iter() {
+            sum += dir.1.get_size();
+        }
+        sum
+    }
+
+    fn get_dirs_smaller_than_n(&self, max_size: usize, sizes: &mut Vec<usize>) -> usize {
+        let mut sum: usize = 0;
+        for file in self.files.iter() {
+            sum += file.1;
+        }
+        for dir in self.dirs.iter() {
+            sum += dir.1.get_dirs_smaller_than_n(max_size, sizes);
+        }
+        if sum <= max_size {
+            sizes.push(sum);
+        }
+        sum
+    }
+
+    fn find_smallest_dir_above_n(&self, min_size: usize, result: &mut usize) {
+        for dir in self.dirs.iter() {
+            dir.1.find_smallest_dir_above_n(min_size, result);
+            let s = dir.1.get_size();
+            if s > min_size && s < *result {
+                *result = s;
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn print(&self) {
+        println!("--- FS ---");
+        self.print_recursive(0);
+    }
+
+    fn print_recursive(&self, depth: usize) {
+        for dir in self.dirs.iter() {
+            for _ in 0..depth * 2 {
+                print!(" ");
+            }
+            println!("- dir {}", dir.0);
+            dir.1.print_recursive(depth + 1);
+        }
+        for file in self.files.iter() {
+            for _ in 0..depth * 2 {
+                print!(" ");
+            }
+            println!("- {: <16} {: <8}", file.0, file.1); 
+        }
+    }
+}
+
+fn day_7() {
+    let input = include_str!("7.txt");
+
+    let mut fs = Dir::new();
+
+    let mut cwd: Vec<&str> = Vec::new();
+
+    fs.dirs.insert("/".to_string(), Dir::new());
+
+    cwd.push("/");
+
+    input.lines().for_each(|line| {
+        if line.starts_with("$ cd") {
+            let new_dir = line.split("cd ").last().expect("cd missing arg");
+            match new_dir {
+                "/" => { cwd.clear(); cwd.push("/") },
+                ".." => _ = cwd.pop(),
+                _ => cwd.push(new_dir),
+            }
+        } else if line.starts_with("$ ls") {
+            // list beginning
+        } else {
+            let mut entry = line.split(" ");
+            let first = entry.nth(0).unwrap().clone();
+            let last = entry.last().unwrap().clone();
+            if line.starts_with("dir") {
+
+            } else {
+                fs.add_file(&cwd, last.to_string(), first.parse::<usize>().unwrap());
+            }
+        }
+    });
+
+    let mut sizes = Vec::new();
+    fs.get_dirs_smaller_than_n(100000, &mut sizes);
+    let part1 = sizes.iter().sum::<usize>();
+
+    // fs.print();
+
+    sizes.clear();
+    let size_to_clear = 30000000 - (70000000 - fs.get_size());
+
+    // println!("space to clear: {size_to_clear}");
+    let mut result: usize = usize::MAX;
+    fs.find_smallest_dir_above_n(size_to_clear, &mut result);
+
+    println!("Day  7: {: >8} {: >8?}", part1, result);
+}
+
+fn day_8() {
+    let input = include_str!("8.txt");
+
+    let mut trees = input.lines()
+        .map(|line| line.bytes().map(|b| (b as i8 - 48, false)).collect::<Vec<(i8, bool)>>())
+        .collect::<Vec<Vec<(i8, bool)>>>();
+    
+    let w = trees[0].len();
+    let h = trees.len();
+
+    println!("w, h: {w}x{h}");
+
+    for y in 0..h {
+        for x in 0..w {
+            print!("{} ", trees[y][x].0);
+        }
+        println!("");
+    }
+
+    // set borders to visible
+    for i in 0..w {
+        trees[0][i].1 = true;
+        trees[h-1][i].1 = true;
+    }
+
+    for i in 0..h {
+        trees[i][0].1 = true;
+        trees[i][h-1].1 = true;
+    }
+
+    // from left side
+    for y in 0..h {
+        let mut max: i8 = -1;
+        let mut x = 0;
+        loop {
+            if trees[y][x].0 > max {
+                // println!("{x},{y} visible");
+                trees[y][x].1 = true;
+                max = trees[y][x].0;
+            }
+            x += 1;
+            if x == w {
+                break;
+            }
+        }
+    }
+
+    // from top side
+    for x in 0..w {
+        let mut max: i8 = -1;
+        let mut y = 0;
+        loop {
+            if trees[y][x].0 > max {
+                // println!("{x},{y} visible");
+                trees[y][x].1 = true;
+                max = trees[y][x].0;
+            }
+            y += 1;
+            if y == h {
+                break;
+            }
+        }
+    }
+
+    // from right side
+    for y in (0..h).rev() {
+        let mut max: i8 = -1;
+        let mut x = w - 1;
+        loop {
+            if trees[y][x].0 > max {
+                // println!("{x},{y} visible");
+                trees[y][x].1 = true;
+                max = trees[y][x].0;
+            }
+            if x == 0 {
+                break;
+            }
+            x -= 1;
+        }
+    }
+
+    // from bottom side
+    for x in (0..w).rev() {
+        let mut max: i8 = -1;
+        let mut y = h - 1;
+        loop {
+            if trees[y][x].0 > max {
+                // println!("{x},{y} visible");
+                trees[y][x].1 = true;
+                max = trees[y][x].0;
+            }
+            if y == 0 {
+                break;
+            }
+            y -= 1;
+        }
+    }
+
+
+    println!("");
+
+    let mut count = 0;
+    for y in 0..h {
+        for x in 0..w {
+            print!("{} ", trees[y][x].1 as u8);
+            if trees[y][x].1 {
+                count += 1;
+            }
+        }
+        println!("");
+    }
+    
+    let mut best_score = 0;
+    for y in 0..h {
+        for x in 0..w {
+            let z = trees[y][x].0; // current tree height
+            let score = 0;
+
+            // println!("-----------");
+            // println!("x, y, z: {} {} {}", x, y, z);
+
+            // look right
+            let mut r_score = 0;
+            // println!("looking right");
+            for nx in x+1..w {
+                let nz = trees[y][nx].0;
+                // println!("  nx, y, nz: {} {} {}", nx, y, nz);
+                r_score += 1;
+                if nz >= z {
+                    // println!("  breaking");
+                    break;
+                }
+            }
+
+            // look left
+            // println!("looking left");
+            let mut l_score = 0;
+            if x > 0 {
+                for nx in (0..x).rev() {
+                    let nz = trees[y][nx].0;
+                    // println!("  nx, y, nz: {} {} {}", nx, y, nz);
+                    l_score += 1;
+                    if nz >= z {
+                        // println!("  breaking");
+                        break;
+                    }
+                }
+            }
+
+            // look down
+            let mut d_score = 0;
+            for ny in y+1..h {
+                let nz = trees[ny][x].0;
+                d_score += 1;
+                if nz >= z {
+                    break;
+                }
+            }
+
+            // look up
+            let mut u_score = 0;
+            if y > 0 {
+                for ny in (0..y).rev() {
+                    let nz = trees[ny][x].0;
+                    u_score += 1;
+                    if nz >= z {
+                        break;
+                    }
+                }
+            }
+
+            let score = r_score * l_score * u_score * d_score;
+            if score > best_score {
+                best_score = score;
+                println!("x y: {},{}   r l u d: {} {} {} {}    score: {}", x, y, r_score, l_score, u_score, d_score, score);
+            }
+        }
+    }
+    
+    println!("Day  8: {: >8} {: >8?}", count, best_score);
+}
+
 fn main() {
     day_1();
     day_2();
@@ -263,4 +574,6 @@ fn main() {
     day_4();
     day_5();
     day_6();
+    day_7();
+    day_8();
 }
