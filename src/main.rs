@@ -20,7 +20,7 @@ fn day_1() {
     let highest = sums.first().expect("invalid input");
     let sum_of_top3 = sums.iter().take(3).sum::<u32>();
 
-    println!("Day  1: {: >8} {: >8}", highest, sum_of_top3);
+    println!("Day  1: {: >10} {: >10}", highest, sum_of_top3);
 }
 
 fn day_2() {
@@ -57,7 +57,7 @@ fn day_2() {
         }
     ).sum();
 
-    println!("Day  3: {: >8} {: >8?}", result1, result2);
+    println!("Day  3: {: >10} {: >10}", result1, result2);
 }
 
 fn day_3() {
@@ -94,7 +94,7 @@ fn day_3() {
             _ => 0 as i32,
         })
         .sum::<i32>();
-    println!("Day  3: {: >8} {: >8?}", result1, result2);
+    println!("Day  3: {: >10} {: >10}", result1, result2);
 }
 
 struct IntRange {
@@ -140,29 +140,43 @@ fn day_4() {
     })
     .count();
 
-    println!("Day  4: {: >8} {: >8?}", count1, count2);
+    println!("Day  4: {: >10} {: >10}", count1, count2);
 }
 
 fn day_5() {
     let input = include_str!("5.txt");
 
+    // split input at the empty line
     let mut split = input.split("\r\n\r\n");
-    let (crates, moves) = (split.next().unwrap().lines().collect::<Vec<&str>>(), split.next().unwrap().lines());
+
+    // parse crate stack input into vec of strings
+    let crates = split.next().unwrap().lines().collect::<Vec<&str>>();
+
+    let moves = split.next().unwrap().lines();
 
     let max_height = crates.len();
 
-    let num_stacks = crates
-        .last().unwrap()
-        .split_ascii_whitespace().count();
+    // use bottom row of crates to count num of stacks
+    let num_stacks = crates.last()
+        .unwrap()
+        .split_ascii_whitespace()
+        .count();
 
+    // represent each stack as a vec of chars, bottom crate first
     let mut stacks: Vec<Vec<char>> = Vec::new();
     for _ in 0..num_stacks {
         stacks.push(Vec::new());
     }
 
+    // parse crate input strings into stack struct, starting from bottom
     for i in (0..max_height-1).rev() {
         let line = crates[i];
-        line.chars().collect::<Vec<char>>().chunks(4)
+
+        // get chars in chunks of 4 (each crate is 3 chars + a space)
+        // map each chunk to a single char, and filter out empty crates
+        line.chars()
+            .collect::<Vec<char>>()
+            .chunks(4)
             .map(|c| c[1])
             .enumerate()
             .for_each(|f| {
@@ -172,6 +186,8 @@ fn day_5() {
             });
     }
 
+    // Moves are in the format 'move 6 from 5 to 7', so we can split at spaces, skip the first word
+    // and then grab every second value from there, parsing to integers and collecting into a tuple
     let m: Vec<Vec<usize>> = moves
         .map(|line| {
             let nums = line.split_ascii_whitespace()
@@ -182,6 +198,7 @@ fn day_5() {
             nums
         }).collect();
     
+        // Using the values from the tuple, pop values off the "from" stack and push to the "to" stack
         // m.iter().for_each(|m| {
         //     let count = m[0];
         //     let from  = m[1] - 1;
@@ -193,6 +210,7 @@ fn day_5() {
         //     }
         // });
         
+        // Use a temporary stack to push and pop from to maintain the order when placing on the "to" stack
         m.iter().for_each(|m| {
             let count = m[0];
             let from  = m[1] - 1;
@@ -207,11 +225,15 @@ fn day_5() {
             }
         });
     
-    for stack in stacks.iter() {
-        println!("{:?}", stack);
-    }
+    let result: String = stacks.iter()
+        .map(|stack| *stack.last().unwrap())
+        .collect();
 
-    println!("Day  5: {: >8} {: >8?}", -1, -1);
+    // for stack in stacks.iter() {
+    //     println!("{:?}", stack);
+    // }
+
+    println!("Day  5: {: >10} {: >10}", result, -1);
 }
 
 // create a bitmask of ascii codes, then count the ones
@@ -239,7 +261,7 @@ fn day_6() {
     let first_packet_offset = get_first_unique_n(data, START_OF_PACKET_SIZE);
     let first_msg_offset = get_first_unique_n(data, START_OF_MSG_SIZE);
 
-    println!("Day  6: {: >8} {: >8?}", first_packet_offset, first_msg_offset);
+    println!("Day  6: {: >10} {: >10}", first_packet_offset, first_msg_offset);
 }
 
 struct Dir {
@@ -375,7 +397,7 @@ fn day_7() {
     let mut result: usize = usize::MAX;
     fs.find_smallest_dir_above_n(size_to_clear, &mut result);
 
-    println!("Day  7: {: >8} {: >8?}", part1, result);
+    println!("Day  7: {: >10} {: >10}", part1, result);
 }
 
 fn day_8() {
@@ -536,7 +558,7 @@ fn day_8() {
         }
     }
     
-    println!("Day  8: {: >8} {: >8?}", count, best_score);
+    println!("Day  8: {: >10} {: >10}", count, best_score);
 }
 
 #[derive(Clone, Copy, Hash, Eq, PartialEq)]
@@ -632,7 +654,7 @@ fn day_9() {
     }).collect::<Vec<usize>>();
     
     
-    println!("Day  9: {: >8} {: >8?}", solutions[0], solutions[1]);
+    println!("Day  9: {: >10} {: >10}", solutions[0], solutions[1]);
 
 }
 
