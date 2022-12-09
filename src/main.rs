@@ -26,7 +26,7 @@ fn day_1() {
 fn day_2() {
     let input = include_str!("2.txt");
 
-    let result: u32 = input.lines().map(|line| 
+    let result1: u32 = input.lines().map(|line| 
         match line {
             "A X" => 1 + 3,
             "A Y" => 2 + 6,
@@ -41,9 +41,8 @@ fn day_2() {
         }
     ).sum();
 
-    print!("sum: {result} ");
     // part two
-    let result: u32 = input.lines().map(|line| 
+    let result2: u32 = input.lines().map(|line| 
         match line {
             "A X" => 0 + 3,
             "A Y" => 3 + 1,
@@ -58,14 +57,14 @@ fn day_2() {
         }
     ).sum();
 
-    println!("{result}");
+    println!("Day  3: {: >8} {: >8?}", result1, result2);
 }
 
 fn day_3() {
     let input = include_str!("3.txt");
 
     let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let result: i32 = input.lines().map(|line| {
+    let result1: i32 = input.lines().map(|line| {
         let compartments = line.split_at(line.len() / 2);
         let m = letters.as_bytes().iter()
             .filter(|c| compartments.0.as_bytes().contains(c) && compartments.1.as_bytes().contains(c))
@@ -79,9 +78,8 @@ fn day_3() {
             .sum::<i32>();
         m
     }).sum();
-    print!("day 3: {result} ");
 
-    let result: i32 = input.lines().collect::<Vec<&str>>()
+    let result2: i32 = input.lines().collect::<Vec<&str>>()
         .chunks(3)
         .map(|chunk| {
             for char in letters.as_bytes() {
@@ -96,7 +94,7 @@ fn day_3() {
             _ => 0 as i32,
         })
         .sum::<i32>();
-    println!("{result}");
+    println!("Day  3: {: >8} {: >8?}", result1, result2);
 }
 
 struct IntRange {
@@ -117,7 +115,7 @@ fn range_overlaps(range1: &IntRange, range2: &IntRange) -> bool {
 fn day_4() {
     let input = include_str!("4.txt");
 
-    let count = input
+    let count1 = input
         .lines()
         .filter(|line| {
             let assignments = line.split(",").collect::<Vec<&str>>();
@@ -129,9 +127,8 @@ fn day_4() {
         })
         .count();
 
-    println!("count: {count}");
 
-    let count = input
+    let count2 = input
     .lines()
     .filter(|line| {
         let assignments = line.split(",").collect::<Vec<&str>>();
@@ -142,8 +139,8 @@ fn day_4() {
         range_overlaps(&r1, &r2) || range_overlaps(&r2, &r1)
     })
     .count();
-    println!("count: {count}");
 
+    println!("Day  4: {: >8} {: >8?}", count1, count2);
 }
 
 fn day_5() {
@@ -201,11 +198,11 @@ fn day_5() {
             let from  = m[1] - 1;
             let to    = m[2] - 1;
             let mut tmp: Vec<char> = Vec::new();
-            for i in 0..count {
+            for _ in 0..count {
                 let c = stacks[from].pop().unwrap();
                 tmp.push(c);
             }
-            for i in 0..count {
+            for _ in 0..count {
                 stacks[to].push(tmp.pop().unwrap());
             }
         });
@@ -214,11 +211,7 @@ fn day_5() {
         println!("{:?}", stack);
     }
 
-    
-
-    println!("crates:");
-    // println!("{}", crates);
-    println!("num &mut : {num_stacks}")
+    println!("Day  5: {: >8} {: >8?}", -1, -1);
 }
 
 // create a bitmask of ascii codes, then count the ones
@@ -246,7 +239,7 @@ fn day_6() {
     let first_packet_offset = get_first_unique_n(data, START_OF_PACKET_SIZE);
     let first_msg_offset = get_first_unique_n(data, START_OF_MSG_SIZE);
 
-    println!("first packet detected at char {first_packet_offset}, first message at char {first_msg_offset}");
+    println!("Day  6: {: >8} {: >8?}", first_packet_offset, first_msg_offset);
 }
 
 struct Dir {
@@ -395,15 +388,6 @@ fn day_8() {
     let w = trees[0].len();
     let h = trees.len();
 
-    println!("w, h: {w}x{h}");
-
-    for y in 0..h {
-        for x in 0..w {
-            print!("{} ", trees[y][x].0);
-        }
-        println!("");
-    }
-
     // set borders to visible
     for i in 0..w {
         trees[0][i].1 = true;
@@ -483,32 +467,22 @@ fn day_8() {
         }
     }
 
-
-    println!("");
-
     let mut count = 0;
     for y in 0..h {
         for x in 0..w {
-            print!("{} ", trees[y][x].1 as u8);
             if trees[y][x].1 {
                 count += 1;
             }
         }
-        println!("");
     }
     
     let mut best_score = 0;
     for y in 0..h {
         for x in 0..w {
             let z = trees[y][x].0; // current tree height
-            let score = 0;
-
-            // println!("-----------");
-            // println!("x, y, z: {} {} {}", x, y, z);
 
             // look right
             let mut r_score = 0;
-            // println!("looking right");
             for nx in x+1..w {
                 let nz = trees[y][nx].0;
                 // println!("  nx, y, nz: {} {} {}", nx, y, nz);
@@ -520,7 +494,6 @@ fn day_8() {
             }
 
             // look left
-            // println!("looking left");
             let mut l_score = 0;
             if x > 0 {
                 for nx in (0..x).rev() {
@@ -559,12 +532,108 @@ fn day_8() {
             let score = r_score * l_score * u_score * d_score;
             if score > best_score {
                 best_score = score;
-                println!("x y: {},{}   r l u d: {} {} {} {}    score: {}", x, y, r_score, l_score, u_score, d_score, score);
             }
         }
     }
     
     println!("Day  8: {: >8} {: >8?}", count, best_score);
+}
+
+#[derive(Clone, Copy, Hash, Eq, PartialEq)]
+struct Point(i32, i32);
+
+impl Point {
+    fn move_dir(&mut self, dir: Direction) {
+        match dir {
+            Direction::Left => self.0 -= 1,
+            Direction::Up => self.1 += 1,
+            Direction::Right => self.0 += 1,
+            Direction::Down => self.1 -= 1,
+        }
+    }
+
+    fn move_offset(&mut self, x: i32, y: i32) {
+        self.0 += x;
+        self.1 += y;
+    }
+}
+
+struct Rope {
+    segments: Vec<Point>,
+}
+
+#[derive(Copy, Clone)]
+enum Direction {
+    Left,
+    Up,
+    Right,
+    Down,
+}
+
+impl Rope {
+    fn new(n: usize) -> Self {
+        assert!(n >= 2);
+        Rope {
+            segments: vec![Point(0, 0); n],
+        }
+    }
+
+    fn move_head(&mut self, dir: Direction) -> Point {
+
+        self.segments[0].move_dir(dir);
+
+        for i in 0..self.segments.len() - 1 {
+            // i is front knot, i+1 is next knot
+            let dx = self.segments[i].0 - self.segments[i+1].0;
+            let dy = self.segments[i].1 - self.segments[i+1].1;
+
+            if dx.abs() > 1 && dy.abs() > 1 {
+                self.segments[i+1].move_offset(dx / 2, dy / 2);
+            } else {
+                if dx.abs() > 1 {
+                    self.segments[i+1].move_offset(dx / 2, dy);
+                }
+    
+                if dy.abs() > 1 {
+                    self.segments[i+1].move_offset(dx, dy / 2);
+                }
+            }
+        }
+
+        // there must be a last because we assert n >= 2 at creation
+        *self.segments.last().unwrap()
+    }
+}
+
+fn day_9() {
+    let input = include_str!("9.txt");
+
+    let mut ropes = vec![Rope::new(2), Rope::new(10)];
+
+    let solutions = ropes.iter_mut()
+        .map(|rope| {
+        let mut visited = HashSet::new();
+        input.lines().for_each(|line| {
+            // first element is dir, second amount
+            let mut split = line.split(" ");
+            let dir = match split.next().expect("empty line") {
+                "L" => Direction::Left,
+                "U" => Direction::Up,
+                "R" => Direction::Right,
+                "D" => Direction::Down,
+                _ => panic!("invalid input"),
+            };
+            let count = split.next().expect("direction with no amount").parse::<usize>().expect("couldn't parse number");
+            for _ in 0..count {
+                visited.insert(rope.move_head(dir));
+            }
+        });
+        visited.len()
+    }).collect::<Vec<usize>>();
+    
+    
+    println!("Day  9: {: >8} {: >8?}", solutions[0], solutions[1]);
+
 }
 
 fn main() {
@@ -576,4 +645,5 @@ fn main() {
     day_6();
     day_7();
     day_8();
+    day_9();
 }
